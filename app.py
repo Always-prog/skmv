@@ -52,10 +52,17 @@ def index():
         
         # Текущие постояльцы
         result = execute_query("""
-            SELECT COUNT(DISTINCT sg.guest_id) as count 
-            FROM stay_guest sg 
-            JOIN stay s ON s.stay_id = sg.stay_id 
-            WHERE CURRENT_DATE BETWEEN s.check_in_date AND s.check_out_date
+            SELECT COUNT(DISTINCT guest_id) as count 
+            FROM (
+                SELECT s.primary_guest as guest_id
+                FROM stay s 
+                WHERE CURRENT_DATE BETWEEN s.check_in_date AND s.check_out_date
+                UNION
+                SELECT sg.guest_id
+                FROM stay_guest sg 
+                JOIN stay s ON s.stay_id = sg.stay_id 
+                WHERE CURRENT_DATE BETWEEN s.check_in_date AND s.check_out_date
+            ) all_guests
         """)
         stats['current_guests'] = result[0]['count'] if result else 0
         
