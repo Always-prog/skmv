@@ -1,0 +1,184 @@
+{% extends "base.html" %}
+
+{% block title %}Новая путёвка - Санаторий КМВ{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>
+                <i class="fas fa-calendar-plus me-2"></i>
+                Новая путёвка
+            </h1>
+            <a href="{{ url_for('stays') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i>
+                Назад к списку
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-calendar-plus me-2"></i>
+                    Создание новой путёвки
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="primary_guest" class="form-label">
+                                <i class="fas fa-user me-1"></i>
+                                Основной гость <span class="text-danger">*</span>
+                            </label>
+                            <select class="form-select" id="primary_guest" name="primary_guest" required>
+                                <option value="">Выберите гостя</option>
+                                {% for guest in guests %}
+                                <option value="{{ guest.guest_id }}">{{ guest.full_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="room_id" class="form-label">
+                                <i class="fas fa-bed me-1"></i>
+                                Комната <span class="text-danger">*</span>
+                            </label>
+                            <select class="form-select" id="room_id" name="room_id" required>
+                                <option value="">Выберите комнату</option>
+                                {% for room in rooms %}
+                                <option value="{{ room.room_id }}">
+                                    {{ room.building }} - {{ room.number }} ({{ room.capacity }} чел.)
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="check_in_date" class="form-label">
+                                <i class="fas fa-sign-in-alt me-1"></i>
+                                Дата заезда <span class="text-danger">*</span>
+                            </label>
+                            <input type="date" 
+                                   class="form-control" 
+                                   id="check_in_date" 
+                                   name="check_in_date" 
+                                   required>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="check_out_date" class="form-label">
+                                <i class="fas fa-sign-out-alt me-1"></i>
+                                Дата выезда <span class="text-danger">*</span>
+                            </label>
+                            <input type="date" 
+                                   class="form-control" 
+                                   id="check_out_date" 
+                                   name="check_out_date" 
+                                   required>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('stays') }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times me-2"></i>
+                            Отмена
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-2"></i>
+                            Создать путёвку
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Информация
+                </h6>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled mb-0">
+                    <li class="mb-2">
+                        <i class="fas fa-asterisk text-danger me-1"></i>
+                        Поля, отмеченные звездочкой, обязательны для заполнения
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-user text-info me-1"></i>
+                        Основной гость - главный постоялец путёвки
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-bed text-success me-1"></i>
+                        Комната должна быть свободна в указанные даты
+                    </li>
+                    <li>
+                        <i class="fas fa-calendar text-warning me-1"></i>
+                        Дата выезда должна быть позже даты заезда
+                    </li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-quick-actions me-2"></i>
+                    Быстрые действия
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('new_guest') }}" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-user-plus me-1"></i>
+                        Добавить нового гостя
+                    </a>
+                    <a href="{{ url_for('new_room') }}" class="btn btn-outline-info btn-sm">
+                        <i class="fas fa-plus me-1"></i>
+                        Добавить новую комнату
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const checkInDate = document.getElementById('check_in_date');
+    const checkOutDate = document.getElementById('check_out_date');
+    
+    // Устанавливаем минимальную дату заезда на сегодня
+    const today = new Date().toISOString().split('T')[0];
+    checkInDate.min = today;
+    
+    // При изменении даты заезда обновляем минимальную дату выезда
+    checkInDate.addEventListener('change', function() {
+        checkOutDate.min = this.value;
+        if (checkOutDate.value && checkOutDate.value <= this.value) {
+            checkOutDate.value = '';
+        }
+    });
+    
+    // При изменении даты выезда проверяем корректность
+    checkOutDate.addEventListener('change', function() {
+        if (this.value <= checkInDate.value) {
+            alert('Дата выезда должна быть позже даты заезда');
+            this.value = '';
+        }
+    });
+});
+</script>
+{% endblock %} 

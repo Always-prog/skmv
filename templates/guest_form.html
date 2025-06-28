@@ -1,0 +1,193 @@
+{% extends "base.html" %}
+
+{% block title %}
+    {% if guest %}Редактирование гостя{% else %}Новый гость{% endif %} - Санаторий КМВ
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>
+                <i class="fas fa-user me-2"></i>
+                {% if guest %}Редактирование гостя{% else %}Новый гость{% endif %}
+            </h1>
+            <a href="{{ url_for('guests') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i>
+                Назад к списку
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-user-edit me-2"></i>
+                    {% if guest %}Редактирование данных гостя{% else %}Добавление нового гостя{% endif %}
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="full_name" class="form-label">
+                                <i class="fas fa-user me-1"></i>
+                                ФИО <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" 
+                                   class="form-control" 
+                                   id="full_name" 
+                                   name="full_name" 
+                                   value="{{ guest.full_name if guest else '' }}"
+                                   required>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="birth_date" class="form-label">
+                                <i class="fas fa-birthday-cake me-1"></i>
+                                Дата рождения <span class="text-danger">*</span>
+                            </label>
+                            <input type="date" 
+                                   class="form-control" 
+                                   id="birth_date" 
+                                   name="birth_date" 
+                                   value="{{ guest.birth_date.strftime('%Y-%m-%d') if guest and guest.birth_date else '' }}"
+                                   required>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="sex" class="form-label">
+                                <i class="fas fa-venus-mars me-1"></i>
+                                Пол <span class="text-danger">*</span>
+                            </label>
+                            <select class="form-select" id="sex" name="sex" required>
+                                <option value="">Выберите пол</option>
+                                <option value="M" {% if guest and guest.sex == 'M' %}selected{% endif %}>Мужской</option>
+                                <option value="F" {% if guest and guest.sex == 'F' %}selected{% endif %}>Женский</option>
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="passport_num" class="form-label">
+                                <i class="fas fa-id-card me-1"></i>
+                                Номер паспорта
+                            </label>
+                            <input type="text" 
+                                   class="form-control" 
+                                   id="passport_num" 
+                                   name="passport_num" 
+                                   value="{{ guest.passport_num if guest else '' }}"
+                                   placeholder="0000 000000">
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="phone" class="form-label">
+                                <i class="fas fa-phone me-1"></i>
+                                Телефон
+                            </label>
+                            <input type="tel" 
+                                   class="form-control" 
+                                   id="phone" 
+                                   name="phone" 
+                                   value="{{ guest.phone if guest else '' }}"
+                                   placeholder="+7 (999) 123-45-67">
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="email" class="form-label">
+                                <i class="fas fa-envelope me-1"></i>
+                                Email
+                            </label>
+                            <input type="email" 
+                                   class="form-control" 
+                                   id="email" 
+                                   name="email" 
+                                   value="{{ guest.email if guest else '' }}"
+                                   placeholder="guest@example.com">
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('guests') }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times me-2"></i>
+                            Отмена
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-2"></i>
+                            {% if guest %}Сохранить изменения{% else %}Добавить гостя{% endif %}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Информация
+                </h6>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled mb-0">
+                    <li class="mb-2">
+                        <i class="fas fa-asterisk text-danger me-1"></i>
+                        Поля, отмеченные звездочкой, обязательны для заполнения
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-id-card text-info me-1"></i>
+                        Номер паспорта должен быть уникальным
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-phone text-success me-1"></i>
+                        Телефон можно использовать для связи с гостем
+                    </li>
+                    <li>
+                        <i class="fas fa-envelope text-warning me-1"></i>
+                        Email нужен для отправки уведомлений
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Маска для телефона
+    const phoneInput = document.getElementById('phone');
+    if (phoneInput) {
+        phoneInput.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length > 0) {
+                value = '+7 (' + value.substring(1, 4) + ') ' + value.substring(4, 7) + '-' + value.substring(7, 9) + '-' + value.substring(9, 11);
+            }
+            e.target.value = value;
+        });
+    }
+    
+    // Маска для паспорта
+    const passportInput = document.getElementById('passport_num');
+    if (passportInput) {
+        passportInput.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length > 4) {
+                value = value.substring(0, 4) + ' ' + value.substring(4, 10);
+            }
+            e.target.value = value;
+        });
+    }
+});
+</script>
+{% endblock %} 

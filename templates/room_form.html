@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+
+{% block title %}
+    {% if room %}Редактирование комнаты{% else %}Новая комната{% endif %} - Санаторий КМВ
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>
+                <i class="fas fa-bed me-2"></i>
+                {% if room %}Редактирование комнаты{% else %}Новая комната{% endif %}
+            </h1>
+            <a href="{{ url_for('rooms') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i>
+                Назад к списку
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-bed me-2"></i>
+                    {% if room %}Редактирование данных комнаты{% else %}Добавление новой комнаты{% endif %}
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="number" class="form-label">
+                                <i class="fas fa-hashtag me-1"></i>
+                                Номер комнаты <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" 
+                                   class="form-control" 
+                                   id="number" 
+                                   name="number" 
+                                   value="{{ room.number if room else '' }}"
+                                   required>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="building" class="form-label">
+                                <i class="fas fa-building me-1"></i>
+                                Корпус <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" 
+                                   class="form-control" 
+                                   id="building" 
+                                   name="building" 
+                                   value="{{ room.building if room else '' }}"
+                                   required>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="floor" class="form-label">
+                                <i class="fas fa-level-up-alt me-1"></i>
+                                Этаж
+                            </label>
+                            <input type="number" 
+                                   class="form-control" 
+                                   id="floor" 
+                                   name="floor" 
+                                   value="{{ room.floor if room else '' }}"
+                                   min="1" max="50">
+                        </div>
+                        
+                        <div class="col-md-4 mb-3">
+                            <label for="capacity" class="form-label">
+                                <i class="fas fa-users me-1"></i>
+                                Вместимость <span class="text-danger">*</span>
+                            </label>
+                            <input type="number" 
+                                   class="form-control" 
+                                   id="capacity" 
+                                   name="capacity" 
+                                   value="{{ room.capacity if room else '' }}"
+                                   min="1" max="10" required>
+                        </div>
+                        
+                        <div class="col-md-4 mb-3">
+                            <label for="daily_cost" class="form-label">
+                                <i class="fas fa-ruble-sign me-1"></i>
+                                Стоимость/день <span class="text-danger">*</span>
+                            </label>
+                            <input type="number" 
+                                   class="form-control" 
+                                   id="daily_cost" 
+                                   name="daily_cost" 
+                                   value="{{ room.daily_cost if room else '' }}"
+                                   min="0" step="0.01" required>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('rooms') }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times me-2"></i>
+                            Отмена
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-2"></i>
+                            {% if room %}Сохранить изменения{% else %}Добавить комнату{% endif %}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Информация
+                </h6>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled mb-0">
+                    <li class="mb-2">
+                        <i class="fas fa-asterisk text-danger me-1"></i>
+                        Поля, отмеченные звездочкой, обязательны для заполнения
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-hashtag text-info me-1"></i>
+                        Номер комнаты должен быть уникальным
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-users text-success me-1"></i>
+                        Вместимость определяет максимальное количество гостей
+                    </li>
+                    <li>
+                        <i class="fas fa-ruble-sign text-warning me-1"></i>
+                        Стоимость указывается за один день проживания
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Автоматическое форматирование стоимости
+    const costInput = document.getElementById('daily_cost');
+    if (costInput) {
+        costInput.addEventListener('blur', function(e) {
+            const value = parseFloat(e.target.value);
+            if (!isNaN(value)) {
+                e.target.value = value.toFixed(2);
+            }
+        });
+    }
+});
+</script>
+{% endblock %} 

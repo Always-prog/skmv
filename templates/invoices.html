@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+
+{% block title %}Счета - Санаторий КМВ{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>
+                <i class="fas fa-file-invoice me-2"></i>
+                Счета
+            </h1>
+            <button class="btn btn-primary" onclick="createInvoice()">
+                <i class="fas fa-plus me-2"></i>
+                Создать счет
+            </button>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                {% if invoices %}
+                    <div class="table-responsive">
+                        <table class="table table-hover" id="invoicesTable">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Гость</th>
+                                    <th>Период</th>
+                                    <th>Дата выписки</th>
+                                    <th>Сумма</th>
+                                    <th>Статус</th>
+                                    <th>Действия</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for invoice in invoices %}
+                                <tr>
+                                    <td>
+                                        <span class="badge bg-secondary">{{ invoice.invoice_id }}</span>
+                                    </td>
+                                    <td>
+                                        <strong>{{ invoice.guest_name }}</strong>
+                                    </td>
+                                    <td>
+                                        <small>
+                                            {{ invoice.check_in_date.strftime('%d.%m.%Y') if invoice.check_in_date else '' }} - 
+                                            {{ invoice.check_out_date.strftime('%d.%m.%Y') if invoice.check_out_date else '' }}
+                                        </small>
+                                    </td>
+                                    <td>{{ invoice.issue_date.strftime('%d.%m.%Y') if invoice.issue_date else '' }}</td>
+                                    <td>
+                                        <strong>{{ "%.2f"|format(invoice.total_sum) }} ₽</strong>
+                                    </td>
+                                    <td>
+                                        {% if invoice.status == 'unpaid' %}
+                                            <span class="badge bg-danger">Не оплачен</span>
+                                        {% elif invoice.status == 'partly' %}
+                                            <span class="badge bg-warning">Частично оплачен</span>
+                                        {% else %}
+                                            <span class="badge bg-success">Оплачен</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <button type="button" 
+                                                    class="btn btn-sm btn-outline-primary" 
+                                                    title="Редактировать"
+                                                    onclick="editInvoice({{ invoice.invoice_id }})">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <button type="button" 
+                                                    class="btn btn-sm btn-outline-success" 
+                                                    title="Добавить платеж"
+                                                    onclick="addPayment({{ invoice.invoice_id }})">
+                                                <i class="fas fa-plus"></i>
+                                            </button>
+                                            <button type="button" 
+                                                    class="btn btn-sm btn-outline-info" 
+                                                    title="Просмотр платежей"
+                                                    onclick="viewPayments({{ invoice.invoice_id }})">
+                                                <i class="fas fa-credit-card"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-file-invoice fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">Счета не найдены</h5>
+                        <p class="text-muted">Создайте первый счет, чтобы начать работу</p>
+                        <button class="btn btn-primary" onclick="createInvoice()">
+                            <i class="fas fa-plus me-2"></i>
+                            Создать счет
+                        </button>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальные окна -->
+<div class="modal fade" id="paymentsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-credit-card me-2"></i>
+                    Платежи по счету
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="paymentsContent">
+                <!-- Контент будет загружен динамически -->
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Функция для создания счета
+function createInvoice() {
+    // Здесь можно добавить переход на страницу создания счета
+    alert('Функция создания счета будет добавлена позже');
+}
+
+// Функция для редактирования счета
+function editInvoice(invoiceId) {
+    // Здесь можно добавить переход на страницу редактирования
+    alert('Функция редактирования счета будет добавлена позже');
+}
+
+// Функция для добавления платежа
+function addPayment(invoiceId) {
+    // Здесь можно добавить модальное окно для добавления платежа
+    alert('Функция добавления платежа будет добавлена позже');
+}
+
+// Функция для просмотра платежей
+function viewPayments(invoiceId) {
+    const modal = new bootstrap.Modal(document.getElementById('paymentsModal'));
+    document.getElementById('paymentsContent').innerHTML = 
+        '<div class="text-center"><i class="fas fa-spinner fa-spin fa-2x"></i><p>Загрузка...</p></div>';
+    modal.show();
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    if (document.getElementById('invoicesTable')) {
+        console.log('Таблица счетов загружена');
+    }
+});
+</script>
+{% endblock %} 
