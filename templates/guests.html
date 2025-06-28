@@ -88,12 +88,6 @@
                                                title="Редактировать">
                                                 <i class="fas fa-edit"></i>
                                             </a>
-                                            <button type="button" 
-                                                    class="btn btn-sm btn-outline-info" 
-                                                    title="Просмотр путёвок"
-                                                    onclick="viewGuestStays({{ guest.guest_id }})">
-                                                <i class="fas fa-calendar"></i>
-                                            </button>
                                         </div>
                                     </td>
                                 </tr>
@@ -116,38 +110,10 @@
         </div>
     </div>
 </div>
-
-<!-- Модальное окно для просмотра путёвок гостя -->
-<div class="modal fade" id="guestStaysModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">
-                    <i class="fas fa-calendar me-2"></i>
-                    Путёвки гостя
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body" id="guestStaysContent">
-                <!-- Контент будет загружен динамически -->
-            </div>
-        </div>
-    </div>
-</div>
 {% endblock %}
 
 {% block scripts %}
 <script>
-// Функция для просмотра путёвок гостя
-function viewGuestStays(guestId) {
-    // Здесь можно добавить AJAX запрос для получения путёвок гостя
-    // Пока просто показываем модальное окно
-    const modal = new bootstrap.Modal(document.getElementById('guestStaysModal'));
-    document.getElementById('guestStaysContent').innerHTML = 
-        '<div class="text-center"><i class="fas fa-spinner fa-spin fa-2x"></i><p>Загрузка...</p></div>';
-    modal.show();
-}
-
 // Инициализация DataTables для поиска и сортировки
 document.addEventListener('DOMContentLoaded', function() {
     if (document.getElementById('guestsTable')) {
