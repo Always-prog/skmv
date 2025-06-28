@@ -152,11 +152,11 @@
                                 {% for stay in current_stays %}
                                 <tr>
                                     <td>
-                                        <strong>{{ stay.guest_name }}</strong>
+                                        <strong>{{ stay.primary_guest_obj.full_name }}</strong>
                                     </td>
                                     <td>
                                         <span class="badge bg-info">
-                                            {{ stay.building }} - {{ stay.room_number }}
+                                            {{ stay.room_obj.building }} - {{ stay.room_obj.number }}
                                         </span>
                                     </td>
                                     <td>{{ stay.check_in_date.strftime('%d.%m.%Y') if stay.check_in_date else '' }}</td>

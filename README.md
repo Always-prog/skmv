@@ -35,7 +35,7 @@
 
 ## 🛠 Технологии
 
-- **Backend**: Flask (Python)
+- **Backend**: Flask (Python) + SQLAlchemy ORM
 - **Frontend**: HTML5, CSS3, JavaScript, Bootstrap 5
 - **База данных**: PostgreSQL
 - **Иконки**: Font Awesome 6
@@ -103,6 +103,7 @@ python app.py
 ```
 skmv/
 ├── app.py                 # Основное Flask-приложение
+├── models.py             # Модели SQLAlchemy
 ├── dbscript.sql          # SQL-скрипт для создания базы данных
 ├── requirements.txt      # Зависимости Python
 ├── README.md            # Документация

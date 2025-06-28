@@ -43,12 +43,12 @@
                                         <span class="badge bg-secondary">{{ invoice.invoice_id }}</span>
                                     </td>
                                     <td>
-                                        <strong>{{ invoice.guest_name }}</strong>
+                                        <strong>{{ invoice.stay_obj.primary_guest_obj.full_name }}</strong>
                                     </td>
                                     <td>
                                         <small>
-                                            {{ invoice.check_in_date.strftime('%d.%m.%Y') if invoice.check_in_date else '' }} - 
-                                            {{ invoice.check_out_date.strftime('%d.%m.%Y') if invoice.check_out_date else '' }}
+                                            {{ invoice.stay_obj.check_in_date.strftime('%d.%m.%Y') if invoice.stay_obj.check_in_date else '' }} - 
+                                            {{ invoice.stay_obj.check_out_date.strftime('%d.%m.%Y') if invoice.stay_obj.check_out_date else '' }}
                                         </small>
                                     </td>
                                     <td>{{ invoice.issue_date.strftime('%d.%m.%Y') if invoice.issue_date else '' }}</td>

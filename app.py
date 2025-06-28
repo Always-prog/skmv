@@ -1,43 +1,18 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
-import psycopg2
-from psycopg2.extras import RealDictCursor
 import os
 from datetime import datetime, date
-import json
+from sqlalchemy import func, and_, or_, extract
+from models import db, Guest, Room, Stay, StayGuest, Invoice, Payment
 
 app = Flask(__name__)
 app.secret_key = 'your-secret-key-here'  # В продакшене используйте безопасный ключ
 
 # Конфигурация базы данных
-DB_CONFIG = {
-    'host': 'localhost', #os.getenv('DB_HOST', 'localhost'),
-    'database': 'sanatori', #os.getenv('DB_NAME', 'sanatori'),
-    'user': 'kazah', #os.getenv('DB_USER', 'kazah'),
-    'password': 'kazah', #os.getenv('DB_PASSWORD', 'kazah'),
-    'port': '5432' #os.getenv('DB_PORT', '5432')
-}
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://kazah:kazah@localhost:5432/sanatori'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-def get_db_connection():
-    """Создает соединение с базой данных"""
-    return psycopg2.connect(**DB_CONFIG)
-
-def execute_query(query, params=None, fetch=True):
-    """Выполняет SQL запрос и возвращает результат"""
-    conn = get_db_connection()
-    try:
-        with conn.cursor(cursor_factory=RealDictCursor) as cur:
-            cur.execute(query, params)
-            if fetch:
-                result = cur.fetchall()
-                return [dict(row) for row in result]
-            else:
-                conn.commit()
-                return cur.rowcount
-    except Exception as e:
-        conn.rollback()
-        raise e
-    finally:
-        conn.close()
+# Инициализация базы данных
+db.init_app(app)
 
 @app.route('/')
 def index():
@@ -47,51 +22,62 @@ def index():
         stats = {}
         
         # Общее количество гостей
-        result = execute_query("SELECT COUNT(*) as count FROM guest")
-        stats['total_guests'] = result[0]['count'] if result else 0
+        stats['total_guests'] = Guest.query.count()
         
         # Текущие постояльцы
-        result = execute_query("""
-            SELECT COUNT(DISTINCT guest_id) as count 
-            FROM (
-                SELECT s.primary_guest as guest_id
-                FROM stay s 
-                WHERE CURRENT_DATE BETWEEN s.check_in_date AND s.check_out_date
-                UNION
-                SELECT sg.guest_id
-                FROM stay_guest sg 
-                JOIN stay s ON s.stay_id = sg.stay_id 
-                WHERE CURRENT_DATE BETWEEN s.check_in_date AND s.check_out_date
-            ) all_guests
-        """)
-        stats['current_guests'] = result[0]['count'] if result else 0
+        current_date = date.today()
+        
+        # Основные гости из активных путёвок
+        primary_guests = db.session.query(Stay.primary_guest).filter(
+            and_(
+                Stay.check_in_date <= current_date,
+                Stay.check_out_date >= current_date
+            )
+        )
+        
+        # Дополнительные гости из активных путёвок
+        additional_guests = db.session.query(StayGuest.guest_id).join(Stay).filter(
+            and_(
+                Stay.check_in_date <= current_date,
+                Stay.check_out_date >= current_date
+            )
+        )
+        
+        # Объединяем и считаем уникальных гостей
+        all_guest_ids = set()
+        for guest_id in primary_guests:
+            all_guest_ids.add(guest_id[0])
+        for guest_id in additional_guests:
+            all_guest_ids.add(guest_id[0])
+        
+        stats['current_guests'] = len(all_guest_ids)
         
         # Свободные комнаты
-        result = execute_query("""
-            SELECT COUNT(*) as count FROM room r 
-            WHERE r.room_id NOT IN (
-                SELECT DISTINCT s.room_id FROM stay s 
-                WHERE CURRENT_DATE BETWEEN s.check_in_date AND s.check_out_date
+        occupied_rooms = db.session.query(Stay.room_id).filter(
+            and_(
+                Stay.check_in_date <= current_date,
+                Stay.check_out_date >= current_date
             )
-        """)
-        stats['available_rooms'] = result[0]['count'] if result else 0
+        ).distinct()
+        
+        occupied_room_ids = [room[0] for room in occupied_rooms]
+        
+        stats['available_rooms'] = Room.query.filter(
+            ~Room.room_id.in_(occupied_room_ids)
+        ).count()
         
         # Неоплаченные счета
-        result = execute_query("""
-            SELECT COUNT(*) as count FROM invoice 
-            WHERE status IN ('unpaid', 'partly')
-        """)
-        stats['unpaid_invoices'] = result[0]['count'] if result else 0
+        stats['unpaid_invoices'] = Invoice.query.filter(
+            Invoice.status.in_(['unpaid', 'partly'])
+        ).count()
         
         # Текущие путёвки
-        current_stays = execute_query("""
-            SELECT s.*, r.number as room_number, r.building, g.full_name as guest_name
-            FROM stay s
-            JOIN room r ON r.room_id = s.room_id
-            JOIN guest g ON g.guest_id = s.primary_guest
-            WHERE CURRENT_DATE BETWEEN s.check_in_date AND s.check_out_date
-            ORDER BY s.check_in_date
-        """)
+        current_stays = Stay.query.join(Room).join(Guest, Stay.primary_guest == Guest.guest_id).filter(
+            and_(
+                Stay.check_in_date <= current_date,
+                Stay.check_out_date >= current_date
+            )
+        ).order_by(Stay.check_in_date).all()
         
         return render_template('index.html', stats=stats, current_stays=current_stays)
     except Exception as e:
@@ -103,12 +89,7 @@ def index():
 def guests():
     """Список всех гостей"""
     try:
-        guests = execute_query("""
-            SELECT *, 
-                   EXTRACT(YEAR FROM AGE(birth_date)) as age
-            FROM guest 
-            ORDER BY full_name
-        """)
+        guests = Guest.query.order_by(Guest.full_name).all()
         return render_template('guests.html', guests=guests)
     except Exception as e:
         flash(f'Ошибка при загрузке гостей: {str(e)}', 'error')
@@ -120,14 +101,20 @@ def new_guest():
     if request.method == 'POST':
         try:
             data = request.form
-            execute_query("""
-                INSERT INTO guest (full_name, birth_date, sex, passport_num, phone, email)
-                VALUES (%s, %s, %s, %s, %s, %s)
-            """, (data['full_name'], data['birth_date'], data['sex'], 
-                  data['passport_num'], data['phone'], data['email']), fetch=False)
+            guest = Guest(
+                full_name=data['full_name'],
+                birth_date=datetime.strptime(data['birth_date'], '%Y-%m-%d').date(),
+                sex=data['sex'],
+                passport_num=data['passport_num'] or None,
+                phone=data['phone'] or None,
+                email=data['email'] or None
+            )
+            db.session.add(guest)
+            db.session.commit()
             flash('Гость успешно добавлен!', 'success')
             return redirect(url_for('guests'))
         except Exception as e:
+            db.session.rollback()
             flash(f'Ошибка при добавлении гостя: {str(e)}', 'error')
     
     return render_template('guest_form.html', guest=None)
@@ -135,47 +122,33 @@ def new_guest():
 @app.route('/guests/<int:guest_id>/edit', methods=['GET', 'POST'])
 def edit_guest(guest_id):
     """Редактирование гостя"""
+    guest = Guest.query.get_or_404(guest_id)
+    
     if request.method == 'POST':
         try:
             data = request.form
-            execute_query("""
-                UPDATE guest 
-                SET full_name = %s, birth_date = %s, sex = %s, 
-                    passport_num = %s, phone = %s, email = %s
-                WHERE guest_id = %s
-            """, (data['full_name'], data['birth_date'], data['sex'],
-                  data['passport_num'], data['phone'], data['email'], guest_id), fetch=False)
+            guest.full_name = data['full_name']
+            guest.birth_date = datetime.strptime(data['birth_date'], '%Y-%m-%d').date()
+            guest.sex = data['sex']
+            guest.passport_num = data['passport_num'] or None
+            guest.phone = data['phone'] or None
+            guest.email = data['email'] or None
+            
+            db.session.commit()
             flash('Данные гостя обновлены!', 'success')
             return redirect(url_for('guests'))
         except Exception as e:
+            db.session.rollback()
             flash(f'Ошибка при обновлении: {str(e)}', 'error')
     
-    guest = execute_query("SELECT * FROM guest WHERE guest_id = %s", (guest_id,))
-    if not guest:
-        flash('Гость не найден', 'error')
-        return redirect(url_for('guests'))
-    
-    return render_template('guest_form.html', guest=guest[0])
+    return render_template('guest_form.html', guest=guest)
 
 # Роуты для комнат
 @app.route('/rooms')
 def rooms():
     """Список всех комнат"""
     try:
-        rooms = execute_query("""
-            SELECT r.*, 
-                   CASE 
-                       WHEN s.stay_id IS NOT NULL THEN 'occupied'
-                       ELSE 'available'
-                   END as status
-            FROM room r
-            LEFT JOIN (
-                SELECT DISTINCT room_id, stay_id 
-                FROM stay 
-                WHERE CURRENT_DATE BETWEEN check_in_date AND check_out_date
-            ) s ON r.room_id = s.room_id
-            ORDER BY r.building, r.number
-        """)
+        rooms = Room.query.order_by(Room.building, Room.number).all()
         return render_template('rooms.html', rooms=rooms)
     except Exception as e:
         flash(f'Ошибка при загрузке комнат: {str(e)}', 'error')
@@ -187,14 +160,19 @@ def new_room():
     if request.method == 'POST':
         try:
             data = request.form
-            execute_query("""
-                INSERT INTO room (number, building, floor, capacity, daily_cost)
-                VALUES (%s, %s, %s, %s, %s)
-            """, (data['number'], data['building'], data['floor'], 
-                  data['capacity'], data['daily_cost']), fetch=False)
+            room = Room(
+                number=data['number'],
+                building=data['building'],
+                floor=int(data['floor']) if data['floor'] else None,
+                capacity=int(data['capacity']),
+                daily_cost=float(data['daily_cost'])
+            )
+            db.session.add(room)
+            db.session.commit()
             flash('Комната успешно добавлена!', 'success')
             return redirect(url_for('rooms'))
         except Exception as e:
+            db.session.rollback()
             flash(f'Ошибка при добавлении комнаты: {str(e)}', 'error')
     
     return render_template('room_form.html', room=None)
@@ -204,18 +182,7 @@ def new_room():
 def stays():
     """Список всех путёвок"""
     try:
-        stays = execute_query("""
-            SELECT s.*, r.number as room_number, r.building, g.full_name as guest_name,
-                   CASE
-                       WHEN CURRENT_DATE < s.check_in_date THEN 'planned'
-                       WHEN CURRENT_DATE BETWEEN s.check_in_date AND s.check_out_date THEN 'ongoing'
-                       ELSE 'closed'
-                   END as status
-            FROM stay s
-            JOIN room r ON r.room_id = s.room_id
-            JOIN guest g ON g.guest_id = s.primary_guest
-            ORDER BY s.check_in_date DESC
-        """)
+        stays = Stay.query.join(Room).join(Guest, Stay.primary_guest == Guest.guest_id).order_by(Stay.check_in_date.desc()).all()
         return render_template('stays.html', stays=stays)
     except Exception as e:
         flash(f'Ошибка при загрузке путёвок: {str(e)}', 'error')
@@ -227,18 +194,22 @@ def new_stay():
     if request.method == 'POST':
         try:
             data = request.form
-            execute_query("""
-                INSERT INTO stay (room_id, primary_guest, check_in_date, check_out_date)
-                VALUES (%s, %s, %s, %s)
-            """, (data['room_id'], data['primary_guest'], 
-                  data['check_in_date'], data['check_out_date']), fetch=False)
+            stay = Stay(
+                room_id=int(data['room_id']),
+                primary_guest=int(data['primary_guest']),
+                check_in_date=datetime.strptime(data['check_in_date'], '%Y-%m-%d').date(),
+                check_out_date=datetime.strptime(data['check_out_date'], '%Y-%m-%d').date()
+            )
+            db.session.add(stay)
+            db.session.commit()
             flash('Путёвка успешно создана!', 'success')
             return redirect(url_for('stays'))
         except Exception as e:
+            db.session.rollback()
             flash(f'Ошибка при создании путёвки: {str(e)}', 'error')
     
-    rooms = execute_query("SELECT * FROM room ORDER BY building, number")
-    guests = execute_query("SELECT * FROM guest ORDER BY full_name")
+    rooms = Room.query.order_by(Room.building, Room.number).all()
+    guests = Guest.query.order_by(Guest.full_name).all()
     return render_template('stay_form.html', rooms=rooms, guests=guests, stay=None)
 
 # Роуты для счетов
@@ -246,13 +217,7 @@ def new_stay():
 def invoices():
     """Список всех счетов"""
     try:
-        invoices = execute_query("""
-            SELECT i.*, s.check_in_date, s.check_out_date, g.full_name as guest_name
-            FROM invoice i
-            JOIN stay s ON s.stay_id = i.stay_id
-            JOIN guest g ON g.guest_id = s.primary_guest
-            ORDER BY i.issue_date DESC
-        """)
+        invoices = Invoice.query.join(Stay).join(Guest, Stay.primary_guest == Guest.guest_id).order_by(Invoice.issue_date.desc()).all()
         return render_template('invoices.html', invoices=invoices)
     except Exception as e:
         flash(f'Ошибка при загрузке счетов: {str(e)}', 'error')
@@ -263,8 +228,8 @@ def invoices():
 def api_guests():
     """API для получения списка гостей"""
     try:
-        guests = execute_query("SELECT guest_id, full_name FROM guest ORDER BY full_name")
-        return jsonify(guests)
+        guests = Guest.query.with_entities(Guest.guest_id, Guest.full_name).order_by(Guest.full_name).all()
+        return jsonify([{'guest_id': g.guest_id, 'full_name': g.full_name} for g in guests])
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -272,10 +237,12 @@ def api_guests():
 def api_rooms():
     """API для получения списка комнат"""
     try:
-        rooms = execute_query("SELECT room_id, number, building FROM room ORDER BY building, number")
-        return jsonify(rooms)
+        rooms = Room.query.with_entities(Room.room_id, Room.number, Room.building).order_by(Room.building, Room.number).all()
+        return jsonify([{'room_id': r.room_id, 'number': r.number, 'building': r.building} for r in rooms])
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
+    with app.app_context():
+        db.create_all()  # Создаем таблицы, если их нет
     app.run(debug=True, host='0.0.0.0', port=5000) 

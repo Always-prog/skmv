@@ -44,19 +44,18 @@
                                         <span class="badge bg-secondary">{{ stay.stay_id }}</span>
                                     </td>
                                     <td>
-                                        <strong>{{ stay.guest_name }}</strong>
+                                        <strong>{{ stay.primary_guest_obj.full_name }}</strong>
                                     </td>
                                     <td>
                                         <span class="badge bg-info">
-                                            {{ stay.building }} - {{ stay.room_number }}
+                                            {{ stay.room_obj.building }} - {{ stay.room_obj.number }}
                                         </span>
                                     </td>
                                     <td>{{ stay.check_in_date.strftime('%d.%m.%Y') if stay.check_in_date else '' }}</td>
                                     <td>{{ stay.check_out_date.strftime('%d.%m.%Y') if stay.check_out_date else '' }}</td>
                                     <td>
-                                        {% if stay.check_in_date and stay.check_out_date %}
-                                            {% set duration = (stay.check_out_date - stay.check_in_date).days %}
-                                            <span class="badge bg-primary">{{ duration }} дн.</span>
+                                        {% if stay.duration %}
+                                            <span class="badge bg-primary">{{ stay.duration }} дн.</span>
                                         {% else %}
                                             -
                                         {% endif %}
