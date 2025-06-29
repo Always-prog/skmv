@@ -9,6 +9,8 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Font Awesome -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- DataTables CSS -->
+    <link href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css" rel="stylesheet">
     <!-- Custom CSS -->
     <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
 </head>
@@ -46,6 +48,25 @@
                         <a class="nav-link" href="{{ url_for('stays') }}">
                             <i class="fas fa-calendar-alt me-1"></i>Путёвки
                         </a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-stethoscope me-1"></i>Лечение
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{{ url_for('doctors') }}">
+                                <i class="fas fa-user-md me-1"></i>Врачи
+                            </a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('treatment_types') }}">
+                                <i class="fas fa-list me-1"></i>Типы процедур
+                            </a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('treatment_courses') }}">
+                                <i class="fas fa-clipboard-list me-1"></i>Курсы лечения
+                            </a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('treatment_sessions') }}">
+                                <i class="fas fa-clock me-1"></i>Сеансы
+                            </a></li>
+                        </ul>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('invoices') }}">
@@ -95,6 +116,11 @@
 
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <!-- DataTables JS -->
+    <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
     <!-- Custom JS -->
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
     {% block scripts %}{% endblock %}

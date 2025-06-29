@@ -1,0 +1,254 @@
+{% extends "base.html" %}
+
+{% block title %}Гости путёвки - Санаторий КМВ{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>
+                <i class="fas fa-users me-2"></i>
+                Гости путёвки
+            </h1>
+            <a href="{{ url_for('stays') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Назад к путёвкам
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Информация о путёвке -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-calendar-alt me-2"></i>
+                    Информация о путёвке
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <strong>ID путёвки:</strong><br>
+                        <span class="badge bg-secondary">{{ stay.stay_id }}</span>
+                    </div>
+                    <div class="col-md-3">
+                        <strong>Комната:</strong><br>
+                        <span class="badge bg-info">{{ stay.room_obj.building }} - {{ stay.room_obj.number }}</span>
+                    </div>
+                    <div class="col-md-3">
+                        <strong>Вместимость:</strong><br>
+                        <span class="badge bg-primary">{{ stay.room_obj.capacity }} чел.</span>
+                    </div>
+                    <div class="col-md-3">
+                        <strong>Статус:</strong><br>
+                        {% if stay.status == 'planned' %}
+                            <span class="badge bg-warning">Запланирована</span>
+                        {% elif stay.status == 'ongoing' %}
+                            <span class="badge bg-success">Активна</span>
+                        {% else %}
+                            <span class="badge bg-secondary">Завершена</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-md-6">
+                        <strong>Дата заезда:</strong> {{ stay.check_in_date.strftime('%d.%m.%Y') }}
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Дата выезда:</strong> {{ stay.check_out_date.strftime('%d.%m.%Y') }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Основной гость -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-user me-2"></i>
+                    Основной гость
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-user-circle fa-3x text-primary"></i>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <h6 class="mb-1">{{ primary_guest.full_name }}</h6>
+                        <p class="mb-1 text-muted">
+                            <i class="fas fa-id-card me-1"></i>
+                            ID: {{ primary_guest.guest_id }}
+                        </p>
+                        {% if primary_guest.phone %}
+                            <p class="mb-1 text-muted">
+                                <i class="fas fa-phone me-1"></i>
+                                {{ primary_guest.phone }}
+                            </p>
+                        {% endif %}
+                        {% if primary_guest.age %}
+                            <span class="badge bg-info">{{ primary_guest.age }} лет</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Дополнительные гости -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="fas fa-users me-2"></i>
+                    Дополнительные гости
+                </h5>
+                {% if (additional_guests|length + 1) < stay.room_obj.capacity %}
+                    <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#addGuestModal">
+                        <i class="fas fa-plus me-1"></i>Добавить
+                    </button>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                {% if additional_guests %}
+                    {% for guest in additional_guests %}
+                        <div class="d-flex align-items-center justify-content-between mb-3 p-2 border rounded">
+                            <div class="d-flex align-items-center">
+                                <div class="flex-shrink-0">
+                                    <i class="fas fa-user fa-2x text-secondary"></i>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <h6 class="mb-1">{{ guest.full_name }}</h6>
+                                    <p class="mb-1 text-muted">
+                                        <i class="fas fa-id-card me-1"></i>
+                                        ID: {{ guest.guest_id }}
+                                    </p>
+                                    {% if guest.phone %}
+                                        <p class="mb-1 text-muted">
+                                            <i class="fas fa-phone me-1"></i>
+                                            {{ guest.phone }}
+                                        </p>
+                                    {% endif %}
+                                    {% if guest.age %}
+                                        <span class="badge bg-info">{{ guest.age }} лет</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <form method="POST" action="{{ url_for('remove_stay_guest', stay_id=stay.stay_id, guest_id=guest.guest_id) }}" style="display: inline;">
+                                <button type="submit" class="btn btn-sm btn-outline-danger" 
+                                        onclick="return confirm('Удалить гостя {{ guest.full_name }} из путёвки?')">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </form>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-users fa-2x text-muted mb-3"></i>
+                        <p class="text-muted">Дополнительных гостей нет</p>
+                        {% if stay.room_obj.capacity > 1 %}
+                            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addGuestModal">
+                                <i class="fas fa-plus me-2"></i>Добавить гостя
+                            </button>
+                        {% endif %}
+                    </div>
+                {% endif %}
+                
+                <!-- Информация о вместимости -->
+                <div class="mt-3">
+                    <small class="text-muted">
+                        <i class="fas fa-info-circle me-1"></i>
+                        Занято: {{ additional_guests|length + 1 }}/{{ stay.room_obj.capacity }} мест
+                    </small>
+                </div>
+
+                <!-- Отладочная информация -->
+                <div class="mt-2">
+                    <small class="text-muted">
+                        <i class="fas fa-bug me-1"></i>
+                        Отладка: Дополнительных гостей: {{ additional_guests|length }}, 
+                        Вместимость: {{ stay.room_obj.capacity }}
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно добавления гостя -->
+<div class="modal fade" id="addGuestModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-user-plus me-2"></i>
+                    Добавить гостя в путёвку
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('add_stay_guest', stay_id=stay.stay_id) }}">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="guest_id" class="form-label">
+                            <i class="fas fa-user me-1"></i>
+                            Выберите гостя
+                        </label>
+                        <select class="form-select" id="guest_id" name="guest_id" required>
+                            <option value="">Выберите гостя для добавления</option>
+                            {% for guest in all_guests %}
+                                {% if guest.guest_id != stay.primary_guest and guest not in additional_guests %}
+                                    <option value="{{ guest.guest_id }}">
+                                        {{ guest.full_name }} (ID: {{ guest.guest_id }})
+                                        {% if guest.phone %} - {{ guest.phone }}{% endif %}
+                                    </option>
+                                {% endif %}
+                            {% endfor %}
+                        </select>
+                        <div class="form-text">
+                            Показываются только гости, которые еще не добавлены в данную путёвку
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-plus me-2"></i>Добавить
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Улучшение UX для селекта гостей
+    const guestSelect = document.getElementById('guest_id');
+    if (guestSelect) {
+        guestSelect.addEventListener('keyup', function(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            const options = guestSelect.querySelectorAll('option');
+            
+            options.forEach(option => {
+                if (option.value === '') return; // Пропускаем placeholder
+                
+                const text = option.textContent.toLowerCase();
+                if (text.includes(searchTerm)) {
+                    option.style.display = '';
+                } else {
+                    option.style.display = 'none';
+                }
+            });
+        });
+    }
+});
+</script>
+{% endblock %} 

@@ -88,6 +88,12 @@
                                                title="Редактировать">
                                                 <i class="fas fa-edit"></i>
                                             </a>
+                                            <button type="button" 
+                                                    class="btn btn-sm btn-outline-danger" 
+                                                    onclick="confirmDelete({{ guest.guest_id }}, '{{ guest.full_name }}')"
+                                                    title="Удалить">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
                                         </div>
                                     </td>
                                 </tr>
@@ -110,10 +116,38 @@
         </div>
     </div>
 </div>
+
+<!-- Модальное окно подтверждения удаления -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Подтверждение удаления</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Вы действительно хотите удалить гостя <strong id="guestName"></strong>?</p>
+                <p class="text-danger"><small>Это действие нельзя отменить.</small></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <form id="deleteForm" method="POST" style="display: inline;">
+                    <button type="submit" class="btn btn-danger">Удалить</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
 <script>
+function confirmDelete(guestId, guestName) {
+    document.getElementById('guestName').textContent = guestName;
+    document.getElementById('deleteForm').action = `/guests/${guestId}/delete`;
+    new bootstrap.Modal(document.getElementById('deleteModal')).show();
+}
+
 // Инициализация DataTables для поиска и сортировки
 document.addEventListener('DOMContentLoaded', function() {
     if (document.getElementById('guestsTable')) {

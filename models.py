@@ -154,6 +154,21 @@ class TreatmentSession(db.Model):
     __table_args__ = (
         db.CheckConstraint("status IN ('planned','done','cancelled')"),
     )
+    
+    @property
+    def computed_status(self):
+        """Вычисленный статус сеанса на основе времени"""
+        current_time = datetime.now()
+        
+        # Если статус явно установлен в базе данных, используем его
+        if self.status:
+            return self.status
+        
+        # Если статус не установлен, вычисляем по времени
+        if self.start_ts > current_time:
+            return 'planned'
+        else:
+            return 'done'
 
 class Invoice(db.Model):
     __tablename__ = 'invoice'

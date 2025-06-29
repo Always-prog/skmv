@@ -131,3 +131,13 @@ SELECT s.*,
            ELSE 'closed'
        END AS status
 FROM stay s;
+
+-- текущий статус сеанса лечения вычисляем динамически
+CREATE VIEW treatment_session_status_vw AS
+SELECT ts.*,
+       CASE
+           WHEN ts.status IS NOT NULL THEN ts.status  -- Приоритет статусу из БД
+           WHEN ts.start_ts > CURRENT_TIMESTAMP THEN 'planned'
+           ELSE 'done'
+       END AS computed_status
+FROM treatment_session ts;

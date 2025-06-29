@@ -98,6 +98,7 @@
                                    name="phone" 
                                    value="{{ guest.phone if guest else '' }}"
                                    placeholder="+7 (999) 123-45-67">
+                            <div class="form-text">Введите номер в любом формате</div>
                         </div>
                         
                         <div class="col-md-6 mb-3">
@@ -165,15 +166,24 @@
 {% block scripts %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Маска для телефона
+    // Простая валидация телефона
     const phoneInput = document.getElementById('phone');
     if (phoneInput) {
-        phoneInput.addEventListener('input', function(e) {
-            let value = e.target.value.replace(/\D/g, '');
-            if (value.length > 0) {
-                value = '+7 (' + value.substring(1, 4) + ') ' + value.substring(4, 7) + '-' + value.substring(7, 9) + '-' + value.substring(9, 11);
+        phoneInput.addEventListener('blur', function(e) {
+            const value = e.target.value.replace(/\D/g, '');
+            if (value.length > 0 && value.length < 10) {
+                e.target.classList.add('is-invalid');
+                const feedback = document.createElement('div');
+                feedback.className = 'invalid-feedback';
+                feedback.textContent = 'Номер должен содержать минимум 10 цифр';
+                e.target.parentNode.appendChild(feedback);
+            } else {
+                e.target.classList.remove('is-invalid');
+                const feedback = e.target.parentNode.querySelector('.invalid-feedback');
+                if (feedback) {
+                    feedback.remove();
+                }
             }
-            e.target.value = value;
         });
     }
     

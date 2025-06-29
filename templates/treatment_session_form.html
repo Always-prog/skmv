@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+
+{% block title %}
+    {% if session %}Редактирование сеанса{% else %}Планирование сеанса{% endif %} - Санаторий КМВ
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>
+                <i class="fas fa-clock me-2"></i>
+                {% if session %}Редактирование сеанса{% else %}Планирование сеанса{% endif %}
+            </h1>
+            <a href="{{ url_for('treatment_sessions') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Назад к списку
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-clock me-2"></i>
+                    {% if session %}Редактирование сеанса лечения{% else %}Планирование нового сеанса лечения{% endif %}
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="course_id" class="form-label">
+                                <i class="fas fa-clipboard-list me-1"></i>
+                                Курс лечения <span class="text-danger">*</span>
+                            </label>
+                            <select class="form-select" id="course_id" name="course_id" required>
+                                <option value="">Выберите курс лечения</option>
+                                {% for course in courses %}
+                                    <option value="{{ course.course_id }}" 
+                                            {% if session and session.course_id == course.course_id %}selected{% endif %}>
+                                        {{ course.guest_obj.full_name }} - {{ course.treatment_type_obj.name }} 
+                                        ({{ course.doctor_obj.full_name }})
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="start_ts" class="form-label">
+                                <i class="fas fa-calendar-alt me-1"></i>
+                                Дата и время <span class="text-danger">*</span>
+                            </label>
+                            <input type="datetime-local" 
+                                   class="form-control" 
+                                   id="start_ts" 
+                                   name="start_ts" 
+                                   value="{{ session.start_ts.strftime('%Y-%m-%dT%H:%M') if session else '' }}"
+                                   required>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-12 mb-3">
+                            <label for="result_notes" class="form-label">
+                                <i class="fas fa-align-left me-1"></i>
+                                Заметки о результате
+                            </label>
+                            <textarea class="form-control" 
+                                      id="result_notes" 
+                                      name="result_notes" 
+                                      rows="4"
+                                      placeholder="Заметки о проведении процедуры, результаты, рекомендации...">{{ session.result_notes if session else '' }}</textarea>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('treatment_sessions') }}" class="btn btn-secondary">
+                            <i class="fas fa-times me-2"></i>Отмена
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-2"></i>
+                            {% if session %}Сохранить изменения{% else %}Запланировать сеанс{% endif %}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Улучшение UX для селектов
+document.addEventListener('DOMContentLoaded', function() {
+    // Добавляем поиск в селекты
+    const selects = document.querySelectorAll('select');
+    selects.forEach(select => {
+        select.addEventListener('keyup', function(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            const options = select.querySelectorAll('option');
+            
+            options.forEach(option => {
+                if (option.value === '') return; // Пропускаем placeholder
+                
+                const text = option.textContent.toLowerCase();
+                if (text.includes(searchTerm)) {
+                    option.style.display = '';
+                } else {
+                    option.style.display = 'none';
+                }
+            });
+        });
+    });
+    
+    // Устанавливаем минимальную дату на сегодня
+    const dateInput = document.getElementById('start_ts');
+    if (dateInput) {
+        const today = new Date();
+        const todayString = today.toISOString().slice(0, 16);
+        dateInput.min = todayString;
+    }
+});
+</script>
+{% endblock %} 

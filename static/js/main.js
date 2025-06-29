@@ -1,37 +1,36 @@
 // Основной JavaScript файл для приложения Санатория КМВ
 
-// Функция для обновления времени в навигации
-function updateCurrentTime() {
+// Функция для отображения текущего времени
+function updateTime() {
+    const now = new Date();
+    const timeString = now.toLocaleString('ru-RU', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+    });
     const timeElement = document.getElementById('current-time');
     if (timeElement) {
-        const now = new Date();
-        const timeString = now.toLocaleString('ru-RU', {
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit',
-            hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit'
-        });
         timeElement.textContent = timeString;
     }
 }
 
-// Функция для форматирования дат
-function formatDate(dateString) {
-    if (!dateString) return '-';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('ru-RU');
-}
-
-// Функция для форматирования валюты
-function formatCurrency(amount) {
-    if (!amount) return '0.00 ₽';
-    return new Intl.NumberFormat('ru-RU', {
-        style: 'currency',
-        currency: 'RUB',
-        minimumFractionDigits: 2
-    }).format(amount);
+// Функция для подтверждения удаления
+function confirmDelete(id, name, type) {
+    const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
+    const nameElement = document.getElementById('deleteItemName');
+    const form = document.getElementById('deleteForm');
+    
+    if (nameElement) {
+        nameElement.textContent = name;
+    }
+    if (form) {
+        form.action = `/${type}/${id}/delete`;
+    }
+    
+    modal.show();
 }
 
 // Функция для показа уведомлений
@@ -56,6 +55,29 @@ function showNotification(message, type = 'info') {
     }
 }
 
+// Функция для форматирования дат
+function formatDate(dateString) {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('ru-RU');
+}
+
+// Функция для форматирования времени
+function formatTime(dateString) {
+    const date = new Date(dateString);
+    return date.toLocaleTimeString('ru-RU', {
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+}
+
+// Функция для форматирования цен
+function formatPrice(price) {
+    return new Intl.NumberFormat('ru-RU', {
+        style: 'currency',
+        currency: 'RUB'
+    }).format(price);
+}
+
 // Функция для подтверждения действий
 function confirmAction(message, callback) {
     if (confirm(message)) {
@@ -64,16 +86,16 @@ function confirmAction(message, callback) {
 }
 
 // Функция для валидации форм
-function validateForm(formElement) {
-    const inputs = formElement.querySelectorAll('input[required], select[required], textarea[required]');
+function validateForm(form) {
+    const requiredFields = form.querySelectorAll('[required]');
     let isValid = true;
     
-    inputs.forEach(input => {
-        if (!input.value.trim()) {
-            input.classList.add('is-invalid');
+    requiredFields.forEach(field => {
+        if (!field.value.trim()) {
+            field.classList.add('is-invalid');
             isValid = false;
         } else {
-            input.classList.remove('is-invalid');
+            field.classList.remove('is-invalid');
         }
     });
     
@@ -263,8 +285,8 @@ function sortTable(table, columnIndex) {
 // Инициализация при загрузке страницы
 document.addEventListener('DOMContentLoaded', function() {
     // Обновление времени каждую секунду
-    updateCurrentTime();
-    setInterval(updateCurrentTime, 1000);
+    updateTime();
+    setInterval(updateTime, 1000);
     
     // Добавление анимации появления для карточек
     const cards = document.querySelectorAll('.card');
@@ -307,12 +329,30 @@ document.addEventListener('DOMContentLoaded', function() {
     sortableTables.forEach(table => {
         setupTableSort(table.id);
     });
+    
+    // Подсветка активного пункта навигации
+    const currentPath = window.location.pathname;
+    const navLinks = document.querySelectorAll('.navbar-nav .nav-link');
+    navLinks.forEach(link => {
+        if (link.getAttribute('href') === currentPath) {
+            link.classList.add('active');
+        }
+    });
+    
+    // Улучшение таблиц
+    const tables = document.querySelectorAll('.table');
+    tables.forEach(table => {
+        if (!table.classList.contains('dataTable')) {
+            table.classList.add('table-hover', 'table-striped');
+        }
+    });
 });
 
 // Экспорт функций для использования в других файлах
 window.SanatoriumApp = {
     formatDate,
-    formatCurrency,
+    formatTime,
+    formatPrice,
     showNotification,
     confirmAction,
     validateForm,

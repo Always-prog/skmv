@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+
+{% block title %}Врачи - Санаторий КМВ{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>
+                <i class="fas fa-user-md me-2"></i>
+                Врачи
+            </h1>
+            <a href="{{ url_for('new_doctor') }}" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i>
+                Добавить врача
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                {% if doctors %}
+                    <div class="table-responsive">
+                        <table class="table table-hover" id="doctorsTable">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>ID</th>
+                                    <th>ФИО</th>
+                                    <th>Специальность</th>
+                                    <th>Телефон</th>
+                                    <th>Количество курсов</th>
+                                    <th>Действия</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for doctor in doctors %}
+                                <tr>
+                                    <td>
+                                        <span class="badge bg-secondary">{{ doctor.doctor_id }}</span>
+                                    </td>
+                                    <td>
+                                        <strong>{{ doctor.full_name }}</strong>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-info">{{ doctor.specialty }}</span>
+                                    </td>
+                                    <td>
+                                        {% if doctor.phone %}
+                                            <a href="tel:{{ doctor.phone }}" class="text-decoration-none">
+                                                <i class="fas fa-phone me-1"></i>{{ doctor.phone }}
+                                            </a>
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-primary">{{ doctor.treatment_courses|length }}</span>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <a href="{{ url_for('edit_doctor', doctor_id=doctor.doctor_id) }}" 
+                                               class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <button type="button" 
+                                                    class="btn btn-sm btn-outline-danger" 
+                                                    onclick="confirmDelete({{ doctor.doctor_id }}, '{{ doctor.full_name }}')">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-user-md fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">Врачи не найдены</h5>
+                        <p class="text-muted">Добавьте первого врача, чтобы начать работу</p>
+                        <a href="{{ url_for('new_doctor') }}" class="btn btn-primary">
+                            <i class="fas fa-plus me-2"></i>Добавить врача
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно подтверждения удаления -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Подтверждение удаления</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Вы действительно хотите удалить врача <strong id="doctorName"></strong>?</p>
+                <p class="text-danger"><small>Это действие нельзя отменить.</small></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <form id="deleteForm" method="POST" style="display: inline;">
+                    <button type="submit" class="btn btn-danger">Удалить</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function confirmDelete(doctorId, doctorName) {
+    document.getElementById('doctorName').textContent = doctorName;
+    document.getElementById('deleteForm').action = `/doctors/${doctorId}/delete`;
+    new bootstrap.Modal(document.getElementById('deleteModal')).show();
+}
+
+// Инициализация DataTable
+$(document).ready(function() {
+    $('#doctorsTable').DataTable({
+        language: {
+            url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/ru.json'
+        },
+        order: [[1, 'asc']],
+        pageLength: 25
+    });
+});
+</script>
+{% endblock %} 
